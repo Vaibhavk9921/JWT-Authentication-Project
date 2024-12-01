@@ -17,7 +17,7 @@ public class AppConfig {
 	public UserDetailsService userDetailsService() {
 		UserDetails user = User.builder().username("vaibhav").password(passwordEncoder().encode("abc"))
 				.roles("ADMIN").build();
-
+		
 		UserDetails user1 = User.builder().username("vaishu").password(passwordEncoder().encode("123")).roles("ADMIN")
 				.build();
 
@@ -26,6 +26,7 @@ public class AppConfig {
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
+		System.out.println("Encoded password: " + passwordEncoder().encode("abc"));
 		return new BCryptPasswordEncoder();
 	}
 
