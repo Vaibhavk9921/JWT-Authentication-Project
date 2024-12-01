@@ -17,11 +17,14 @@ public class JwtRequest {
 	private String username;
 	private String password;
 
-	public String getusername() {
+	public JwtRequest() {
+	}
+
+	public String getUsername() {
 		return username;
 	}
 
-	public void setusername(String username) {
+	public void setUsername(String username) {
 		this.username = username;
 	}
 
@@ -30,6 +33,12 @@ public class JwtRequest {
 	}
 
 	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public JwtRequest(String username, String password) {
+		super();
+		this.username = username;
 		this.password = password;
 	}
 
