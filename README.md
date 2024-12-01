@@ -73,7 +73,7 @@ Key Packages
 
 -    Headers:
 
-Authorization: Bearer <your-jwt-token>
+Authorization: Bearer your-jwt-token
 
 ## Setup Instructions 
 
