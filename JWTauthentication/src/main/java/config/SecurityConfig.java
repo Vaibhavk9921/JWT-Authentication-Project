@@ -4,13 +4,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
+import org.springframework.web.cors.CorsConfiguration;
 import security.JWTAuthenticationEntryPoint;
 import security.JwtAuthenticationFilter;
-
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -23,26 +26,28 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		// Updated configuration to use authorizeHttpRequests instead of the deprecated
-		// method
-		http.csrf(csrf -> csrf.disable()) // Disable CSRF protection for stateless authentication
-				.cors(cors -> cors.disable()) // Disable CORS (ensure you handle this as needed in production)
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/home/**").authenticated() // Authenticate /home/**
-																								// requests
-						.requestMatchers("/auth/login").permitAll() // Allow public access to login endpoint
-						.anyRequest().authenticated()) // Authenticate any other requests
-				.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)) // Set the custom
-																									// authentication
-																									// entry point
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Ensure
-																												// stateless
+		// Disable CSRF for the entire application
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(request -> {
+			CorsConfiguration config = new CorsConfiguration();
+			config.setAllowedOrigins(List.of("http://localhost:3000")); // Use List.of instead of Arrays.asList
+			config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+			config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+			return config;
+		})).authorizeHttpRequests(auth -> auth.requestMatchers("/auth/login").permitAll() // Allow login without
+																							// authentication
+				.anyRequest().authenticated()) // All other endpoints need authentication
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)) // Custom entry point
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Stateless
 																												// session
-																												// policy
 
-		// Add the JwtAuthenticationFilter before Spring's
-		// UsernamePasswordAuthenticationFilter
+		// Add the JWT authentication filter
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-		return http.build(); // Return the HttpSecurity configuration
+		return http.build();
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder(); // Use BCrypt for password encoding
 	}
 }
