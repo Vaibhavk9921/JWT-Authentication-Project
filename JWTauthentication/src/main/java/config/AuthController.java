@@ -17,8 +17,9 @@ import models.JwtResponse;
 import security.JwtHelper;
 
 @RestController
-
+@CrossOrigin(origins = "http://localhost:3000") // Allow CORS from frontend (update with your frontend URL)
 public class AuthController {
+
 	@Autowired
 	private UserDetailsService userDetailsService;
 
@@ -32,27 +33,36 @@ public class AuthController {
 
 	@PostMapping("/auth/login")
 	public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest request) {
+		// Authenticate the user
+		this.doAuthenticate(request.getUsername(), request.getPassword());
 
-		this.doAuthenticate(request.getusername(), request.getPassword());
-
-		UserDetails userDetails = userDetailsService.loadUserByUsername(request.getusername());
+		// Get user details and generate JWT token
+		UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
 		String token = this.helper.generateToken(userDetails);
 
+		// Return the JWT token in response
 		JwtResponse response = JwtResponse.builder().jwtToken(token).username(userDetails.getUsername()).build();
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
-	private void doAuthenticate(String email, String password) {
-		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email, password);
+	private void doAuthenticate(String username, String password) {
+		// Create authentication token
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username,
+				password);
+
 		try {
+			// Attempt authentication
 			manager.authenticate(authentication);
 		} catch (BadCredentialsException e) {
-			throw new BadCredentialsException(" Invalid Username or Password  !!");
+			// Log and throw custom error if credentials are invalid
+			logger.error("Invalid Username or Password: {}", e.getMessage());
+			throw new BadCredentialsException("Invalid Username or Password!!");
 		}
 	}
 
+	// Handle authentication errors globally for BadCredentialsException
 	@ExceptionHandler(BadCredentialsException.class)
-	public String exceptionHandler() {
-		return "Credentials Invalid !!";
+	public ResponseEntity<String> exceptionHandler() {
+		return new ResponseEntity<>("Credentials Invalid!!", HttpStatus.UNAUTHORIZED);
 	}
 }
